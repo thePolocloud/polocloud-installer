@@ -1,15 +1,16 @@
 import z from "zod/v4";
-import { DatabaseSource, DatabaseType, Module } from "./install-enums.js";
+import { DatabaseName, DatabaseSource, DatabaseType, Module } from "./install-enums.js";
 
 export const InstallStateSchema = z.object({
   acceptedTerms: z.boolean(),
   module: z.enum(Module).optional(),
   cluster: z.boolean().optional(),
-  
+
   database: z.object({
     exists: z.boolean(),
     source: z.enum(DatabaseSource).optional(),
     type: z.enum(DatabaseType).optional(),
+    name: z.enum(DatabaseName).optional(),
 
     detected: z.object({
       host: z.string(),
@@ -64,3 +65,7 @@ export const zodValidate =
     };
 
 export type InstallState = z.infer<typeof InstallStateSchema>;
+export type DatabaseState =
+    NonNullable<z.infer<typeof InstallStateSchema>["database"]>;
+export type DatabaseCredentials =
+    NonNullable<DatabaseState["credentials"]>;

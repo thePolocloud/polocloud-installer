@@ -13,3 +13,9 @@ export enum DatabaseSource {
   AUTO,
   MANUAL
 }
+
+export enum DatabaseName {
+  POSTGRESQL,
+  MYSQL,
+  MARIADB,
+}

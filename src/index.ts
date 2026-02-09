@@ -3,13 +3,13 @@
 import * as p from "@clack/prompts";
 import color from "picocolors";
 import { JavaCaller } from "java-caller";
-import { DatabaseSource, DatabaseType, Module } from "./install/install-enums.js";
+import { DatabaseName, DatabaseSource, DatabaseType, Module } from "./install/install-enums.js";
 import { createInstallState } from "./install/install-state.factory.js";
 import { DatabaseNameSchema, HostSchema, PasswordSchema, PortSchema, UsernameSchema, zodValidate } from "./install/install-state.js";
 import { writeInstallerConfig } from "./install/installer-config.js";
 import { writeEnv } from "./install/env-writer.js";
 import { downloadLauncherJar } from "./install/github/github-download.js";
-import { detectLocalDatabase } from "./install/database/database-check.js";
+import { checkDatabaseCredentials, detectLocalDatabase } from "./install/database/database-check.js";
 
 const state = createInstallState();
 
@@ -61,7 +61,6 @@ async function installPoloCloud() {
 
     state.module = module;
 
-    //TODO Cluster question if you want to use cluster only then ask db things
     if (module === Module.NODE || module === Module.ALL) {
         const cluster = await p.confirm({
             message: "Do you want to run the Node in cluster mode to share workload and enable automatic Head Node failover?",
@@ -95,7 +94,7 @@ async function installPoloCloud() {
                     [
                         `A service is running on port ${detected.port}.`,
                         `This port is commonly used by ${detected.label}.`,
-                        `If this service is not a database,`,
+                        `If this service is not a ${detected.label} Database,`,
                         `or you don't want to use it, select “No”.`
                     ].join("\n")
                 )
@@ -133,7 +132,7 @@ async function installPoloCloud() {
     }
 
     if (state.cluster && !state.database?.exists) {
-        const database = await p.select({
+        const databaseType = await p.select({
             message: 'Select a database type to store Node Information:',
             options: [
                 {
@@ -148,16 +147,52 @@ async function installPoloCloud() {
             ],
         });
 
-        if (p.isCancel(database)) {
+        if (p.isCancel(databaseType)) {
             p.outro(color.redBright("Installation cancelled."));
             process.exit(0);
         }
 
         state.database = {
             exists: true,
-            type: database,
+            type: databaseType,
             source: DatabaseSource.MANUAL
         }
+    }
+
+    if (state.database?.exists) {
+        let databaseName: DatabaseName;
+
+        if (state.database.detected?.port === 5432) {
+            databaseName = DatabaseName.POSTGRESQL;
+        } else {
+            const options =
+                state.database.detected?.port === 3306
+                    ? [
+                        { value: DatabaseName.MYSQL, label: "MySQL" },
+                        { value: DatabaseName.MARIADB, label: "MariaDB" },
+                    ]
+                    : [
+                        { value: DatabaseName.POSTGRESQL, label: "PostgreSQL (recommended)" },
+                        { value: DatabaseName.MYSQL, label: "MySQL" },
+                        { value: DatabaseName.MARIADB, label: "MariaDB" },
+                    ];
+
+            const result = await p.select({
+                message: state.database.detected
+                    ? "Which database engine is running?"
+                    : "Which database do you want to use?",
+                options,
+            });
+
+            if (p.isCancel(result)) {
+                p.outro(color.redBright("Installation cancelled."));
+                process.exit(0);
+            }
+
+            databaseName = result;
+        }
+
+        state.database.name = databaseName;
     }
 
     /**
@@ -259,7 +294,21 @@ async function installPoloCloud() {
 
     p.log.info(color.whiteBright("Start with Installing..."));
     await p.tasks([
-        //TODO check if the credentials are valid and the database is reachable
+        {
+            title: "Validating database credentials",
+            task: async () => {
+                if (!state.cluster) {
+                    return "Skipped";
+                }
+
+                await checkDatabaseCredentials(
+                    state.database!.name!,
+                    state.database!.credentials!
+                );
+
+                return "Database connection successful";
+            }
+        },
         {
             title: "Downloading PoloCloud launcher",
             task: async (message) => {
