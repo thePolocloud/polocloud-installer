@@ -4,6 +4,7 @@ import { DatabaseSource, DatabaseType, Module } from "./install-enums.js";
 export const InstallStateSchema = z.object({
   acceptedTerms: z.boolean(),
   module: z.enum(Module).optional(),
+  cluster: z.boolean().optional(),
   
   database: z.object({
     exists: z.boolean(),

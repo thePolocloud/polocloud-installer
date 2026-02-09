@@ -61,10 +61,27 @@ async function installPoloCloud() {
 
     state.module = module;
 
+    //TODO Cluster question if you want to use cluster only then ask db things
+    if (module === Module.NODE || module === Module.ALL) {
+        const cluster = await p.confirm({
+            message: "Do you want to run the Node in cluster mode to share workload and enable automatic Head Node failover?",
+            initialValue: false,
+            active: "Yes",
+            inactive: "No"
+        });
+
+        if (p.isCancel(cluster)) {
+            p.outro(color.redBright("Installation cancelled."));
+            process.exit(0);
+        }
+
+        state.cluster = cluster;
+    }
+
     /**
      * Check if the user has a database installed. If not, ask them to select a database type to store Node Information.
      */
-    if (module === Module.CLI || module === Module.NODE) {
+    if (state.cluster) {
         const spinner = p.spinner();
         spinner.start("Checking for running database services...");
 
@@ -115,7 +132,7 @@ async function installPoloCloud() {
         }
     }
 
-    if (!state.database?.exists) {
+    if (state.cluster && !state.database?.exists) {
         const database = await p.select({
             message: 'Select a database type to store Node Information:',
             options: [
