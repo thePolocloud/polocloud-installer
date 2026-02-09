@@ -12,6 +12,7 @@ export type InstallState = {
       database: string
     }
   }
+  autoStart?: boolean
 }
 
 export const state: InstallState = {

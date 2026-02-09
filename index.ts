@@ -141,13 +141,15 @@ async function installPoloCloud() {
         process.exit(0);
     }
 
+    state.autoStart = autoStart;
+
     //TODO create configuration file and finish installation process (download and setup files, create database if needed, etc.)
     p.log.success(color.greenBright("Installation complete!"));
 
     /**
      * If the user does not want to start PoloCloud, show them a message with instructions on how to start it manually.
      */
-    if (!autoStart) {
+    if (!state.autoStart) {
         p.log.info(
             color.whiteBright(
                 [
@@ -161,7 +163,7 @@ async function installPoloCloud() {
     /**
      * If the user wants to start PoloCloud, start it in a detached process so that it continues running after the installer exits.
      */
-    if (autoStart) {
+    if (state.autoStart) {
         const spinner = p.spinner();
         spinner.start("Starting PoloCloud...");
 
