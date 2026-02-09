@@ -3,7 +3,11 @@
 import * as p from "@clack/prompts";
 import color from "picocolors";
 import { JavaCaller } from "java-caller";
-import { state } from "./types.js";
+import { DatabaseType, Module } from "./install/install-enums.js";
+import { createInstallState } from "./install/install-state.factory.js";
+import { DatabaseNameSchema, HostSchema, PasswordSchema, PortSchema, UsernameSchema, zodValidate } from "./install/install-state.js";
+
+const state = createInstallState();
 
 await installPoloCloud();
 
@@ -40,9 +44,9 @@ async function installPoloCloud() {
     const module = await p.select({
         message: 'Select the module you want to install:',
         options: [
-            { value: 'cli', label: 'CLI' },
-            { value: 'node', label: 'NODE' },
-            { value: 'all', label: 'ALL' },
+            { value: Module.CLI, label: 'CLI' },
+            { value: Module.NODE, label: 'NODE' },
+            { value: Module.ALL, label: 'ALL' },
         ],
     })
 
@@ -56,7 +60,7 @@ async function installPoloCloud() {
     /**
      * Check if the user has a database installed. If not, ask them to select a database type to store Node Information.
      */
-    if (module === "cli" || module === "node") {
+    if (module === Module.CLI || module === Module.NODE) {
         // const dbExists = findDatabase(); //TODO find a way to check if the user has a database installed
 
         // state.database = {
@@ -70,11 +74,11 @@ async function installPoloCloud() {
             message: 'Select a database type to store Node Information:',
             options: [
                 {
-                    value: 'sql',
+                    value: DatabaseType.SQL,
                     label: 'SQL (recommended)',
                 },
                 {
-                    value: 'nosql',
+                    value: DatabaseType.NOSQL,
                     label: color.dim('NoSQL (coming soon)'),
                     disabled: true,
                 },
@@ -95,19 +99,45 @@ async function installPoloCloud() {
     /**
      * If the user selected SQL as their database type, ask them for their database credentials.
      */
-    if (state.database?.type === 'sql') {
+    if (state.database?.type === DatabaseType.SQL) {
         const credentials = await p.group({
-            host: () => p.text({ message: 'Database host', initialValue: 'localhost' }),
-            port: () => p.text({ message: 'Database port', initialValue: '5432' }),
-            username: () => p.text({ message: 'Database user' }),
-            password: () => p.password({ message: 'Database password' }),
-            database: () => p.text({ message: 'Database name' }),
+            host: () =>
+                p.text({
+                    message: "Database host",
+                    initialValue: "localhost",
+                    validate: zodValidate(HostSchema),
+                }),
+            port: () =>
+                p.text({
+                    message: "Database port",
+                    initialValue: "5432",
+                    validate: zodValidate(PortSchema),
+                }),
+            username: () =>
+                p.text({
+                    message: "Database user",
+                    validate: zodValidate(UsernameSchema),
+                }),
+
+            password: () =>
+                p.password({
+                    message: "Database password",
+                    validate: zodValidate(PasswordSchema),
+                }),
+
+            database: () =>
+                p.text({
+                    message: "Database name",
+                    validate: zodValidate(DatabaseNameSchema),
+                }),
         })
 
         if (p.isCancel(credentials)) {
             p.outro(color.redBright("Installation cancelled."));
             process.exit(0);
         }
+
+        //TODO check if the credentials are valid and the database is reachable
 
         state.database.credentials = {
             host: credentials.host,
