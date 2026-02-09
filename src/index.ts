@@ -8,6 +8,7 @@ import { createInstallState } from "./install/install-state.factory.js";
 import { DatabaseNameSchema, HostSchema, PasswordSchema, PortSchema, UsernameSchema, zodValidate } from "./install/install-state.js";
 import { writeInstallerConfig } from "./install/installer-config.js";
 import { writeEnv } from "./install/env-writer.js";
+import { downloadLauncherJar } from "./install/github/github-download.js";
 
 const state = createInstallState();
 
@@ -173,25 +174,16 @@ async function installPoloCloud() {
 
     state.autoStart = autoStart;
 
-    p.log.info(color.whiteBright("Starting with Installing..."));
+    p.log.info(color.whiteBright("Start with Installing..."));
     await p.tasks([
         //TODO check if the credentials are valid and the database is reachable
-        // { //TODO downloading all files
-        //     title: "Un-archiving files",
-        //     task: async (message) => {
-        //         const parts: string[] = ["core", "modules", "assets"];
-
-        //         for (let index = 0; index < parts.length; index++) {
-        //             const type = parts[index];
-
-        //             message(`Un-archiving ${type} (${index + 1}/${parts.length})`);
-
-        //             await unarchivePart(type);
-        //         }
-
-        //         return "Un-archiving completed";
-        //     },
-        // },
+        {
+            title: "Downloading PoloCloud launcher",
+            task: async (message) => {
+                const jarPath = await downloadLauncherJar(message);
+                return `Downloaded ${jarPath}`;
+            },
+        },
         {
             title: "Creating Configuration",
             task: async () => {
@@ -247,7 +239,7 @@ async function installPoloCloud() {
         spinner.start("Starting PoloCloud...");
 
         const java = new JavaCaller({
-            jar: "polocloud-launcher.jar",
+            jar: "polocloud-launcher.jar", //TODO maybe only start if module === node because cli would not be shown here
             minimumJavaVersion: 21,
             javaType: "jdk"
         });
