@@ -8,3 +8,8 @@ export enum DatabaseType {
   SQL = "sql",
   NOSQL = "nosql",
 }
+
+export enum DatabaseSource {
+  AUTO,
+  MANUAL
+}

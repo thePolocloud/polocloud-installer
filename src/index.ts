@@ -3,12 +3,13 @@
 import * as p from "@clack/prompts";
 import color from "picocolors";
 import { JavaCaller } from "java-caller";
-import { DatabaseType, Module } from "./install/install-enums.js";
+import { DatabaseSource, DatabaseType, Module } from "./install/install-enums.js";
 import { createInstallState } from "./install/install-state.factory.js";
 import { DatabaseNameSchema, HostSchema, PasswordSchema, PortSchema, UsernameSchema, zodValidate } from "./install/install-state.js";
 import { writeInstallerConfig } from "./install/installer-config.js";
 import { writeEnv } from "./install/env-writer.js";
 import { downloadLauncherJar } from "./install/github/github-download.js";
+import { detectLocalDatabase } from "./install/database/database-check.js";
 
 const state = createInstallState();
 
@@ -64,12 +65,54 @@ async function installPoloCloud() {
      * Check if the user has a database installed. If not, ask them to select a database type to store Node Information.
      */
     if (module === Module.CLI || module === Module.NODE) {
-        // const dbExists = findDatabase(); //TODO find a way to check if the user has a database installed
+        const spinner = p.spinner();
+        spinner.start("Checking for running database services...");
 
-        // state.database = {
-        //     exists: dbExists,
-        //     //type: dbType, //TODO find a way to check the database type
-        // }
+        const detected = await detectLocalDatabase();
+
+        if (detected.exists && detected.port && detected.label) {
+            spinner.stop("Found a running database service");
+
+            p.log.info(
+                color.whiteBright(
+                    [
+                        `A service is running on port ${detected.port}.`,
+                        `This port is commonly used by ${detected.label}.`,
+                        `If this service is not a database,`,
+                        `or you don't want to use it, select “No”.`
+                    ].join("\n")
+                )
+            );
+
+            const useDetectedDb = await p.confirm({
+                message: "Do you want to use this database service?",
+                initialValue: true,
+                active: "Yes, use this database",
+                inactive: "No, configure manually",
+            });
+
+            if (p.isCancel(useDetectedDb)) {
+                p.outro(color.redBright("Installation cancelled."));
+                process.exit(0);
+            }
+
+            if (useDetectedDb) {
+                state.database = {
+                    exists: true,
+                    type: DatabaseType.SQL,
+                    //TODO set type later when connection works,
+                    //currently we can not verify the type (we need this when we want to support NoSQL Databases)
+                    source: DatabaseSource.AUTO,
+                    detected: {
+                        host: "127.0.0.1",
+                        port: detected.port,
+                        label: detected.label,
+                    }
+                };
+            }
+        } else {
+            spinner.stop("No running database service found");
+        }
     }
 
     if (!state.database?.exists) {
@@ -86,7 +129,7 @@ async function installPoloCloud() {
                     disabled: true,
                 },
             ],
-        })
+        });
 
         if (p.isCancel(database)) {
             p.outro(color.redBright("Installation cancelled."));
@@ -96,6 +139,7 @@ async function installPoloCloud() {
         state.database = {
             exists: true,
             type: database,
+            source: DatabaseSource.MANUAL
         }
     }
 
@@ -103,19 +147,25 @@ async function installPoloCloud() {
      * If the user selected SQL as their database type, ask them for their database credentials.
      */
     if (state.database?.type === DatabaseType.SQL) {
+        const askHostPort = state.database.source !== DatabaseSource.AUTO;
+
         const credentials = await p.group({
-            host: () =>
-                p.text({
-                    message: "Database host",
-                    initialValue: "localhost",
-                    validate: zodValidate(HostSchema),
-                }),
-            port: () =>
-                p.text({
-                    message: "Database port",
-                    initialValue: "5432",
-                    validate: zodValidate(PortSchema),
-                }),
+            ...(askHostPort && {
+                host: () =>
+                    p.text({
+                        message: "Database host",
+                        initialValue: "127.0.0.1",
+                        validate: zodValidate(HostSchema),
+                    }),
+
+                port: () =>
+                    p.text({
+                        message: "Database port",
+                        initialValue: "5432",
+                        validate: zodValidate(PortSchema),
+                    }),
+            }),
+
             username: () =>
                 p.text({
                     message: "Database user",
@@ -135,14 +185,30 @@ async function installPoloCloud() {
                 }),
         })
 
-        if (p.isCancel(credentials)) {
+        if (
+            p.isCancel(credentials) ||
+            p.isCancel(credentials.username) ||
+            p.isCancel(credentials.password) ||
+            p.isCancel(credentials.database) ||
+            (askHostPort &&
+                (p.isCancel(credentials.host) ||
+                    p.isCancel(credentials.port)))
+        ) {
             p.outro(color.redBright("Installation cancelled."));
             process.exit(0);
         }
 
+        const host =
+            credentials.host ?? state.database.detected!.host;
+
+        const port =
+            credentials.port !== undefined
+                ? Number(credentials.port)
+                : state.database.detected!.port;
+
         state.database.credentials = {
-            host: credentials.host,
-            port: Number(credentials.port),
+            host: host,
+            port: port,
             username: credentials.username,
             password: credentials.password,
             database: credentials.database,
