@@ -6,6 +6,8 @@ import { JavaCaller } from "java-caller";
 import { DatabaseType, Module } from "./install/install-enums.js";
 import { createInstallState } from "./install/install-state.factory.js";
 import { DatabaseNameSchema, HostSchema, PasswordSchema, PortSchema, UsernameSchema, zodValidate } from "./install/install-state.js";
+import { writeInstallerConfig } from "./install/installer-config.js";
+import { writeEnv } from "./install/env-writer.js";
 
 const state = createInstallState();
 
@@ -48,7 +50,7 @@ async function installPoloCloud() {
             { value: Module.NODE, label: 'NODE' },
             { value: Module.ALL, label: 'ALL' },
         ],
-    })
+    });
 
     if (p.isCancel(module)) {
         p.outro(color.redBright("Installation cancelled."));
@@ -137,8 +139,6 @@ async function installPoloCloud() {
             process.exit(0);
         }
 
-        //TODO check if the credentials are valid and the database is reachable
-
         state.database.credentials = {
             host: credentials.host,
             port: Number(credentials.port),
@@ -157,7 +157,7 @@ async function installPoloCloud() {
             'If you choose automatic startup and Java is not installed,',
             'the installer will attempt to install Java 21 for you.',
         ].join('\n')
-    )
+    );
 
     const autoStart = await p.confirm({
         message: "Do you want to start PoloCloud after the installation is complete?",
@@ -173,7 +173,56 @@ async function installPoloCloud() {
 
     state.autoStart = autoStart;
 
-    //TODO create configuration file and finish installation process (download and setup files, create database if needed, etc.)
+    p.log.info(color.whiteBright("Starting with Installing..."));
+    await p.tasks([
+        //TODO check if the credentials are valid and the database is reachable
+        // { //TODO downloading all files
+        //     title: "Un-archiving files",
+        //     task: async (message) => {
+        //         const parts: string[] = ["core", "modules", "assets"];
+
+        //         for (let index = 0; index < parts.length; index++) {
+        //             const type = parts[index];
+
+        //             message(`Un-archiving ${type} (${index + 1}/${parts.length})`);
+
+        //             await unarchivePart(type);
+        //         }
+
+        //         return "Un-archiving completed";
+        //     },
+        // },
+        {
+            title: "Creating Configuration",
+            task: async () => {
+                writeInstallerConfig({
+                    createdAt: new Date().toISOString(),
+                    module: state.module,
+                    database: state.database
+                        ? {
+                            enabled: true,
+                            type: state.database.type,
+                            credentialsRef: ".env",
+                        }
+                        : { enabled: false },
+                });
+
+                return "Config created";
+            },
+        },
+        {
+            title: "Writing environment variables",
+            task: async () => {
+                if (!state.database?.credentials) {
+                    return "Skipped";
+                }
+
+                writeEnv(state.database.credentials);
+                return "Environment variables created";
+            },
+        },
+    ])
+
     p.log.success(color.greenBright("Installation complete!"));
 
     /**
@@ -187,7 +236,7 @@ async function installPoloCloud() {
                     color.dim('java -jar polocloud-launcher.jar')
                 ].join("\n")
             )
-        )
+        );
     }
 
     /**
