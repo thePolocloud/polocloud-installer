@@ -2,6 +2,7 @@ import { Socket } from "node:net";
 import type { DetectedDatabase } from "./database.types.js";
 import { DatabaseName } from "../install-enums.js";
 import { checkPostgres } from "./postgres.js";
+import { checkMysql } from "./mysql.js";
 
 const COMMON_DB_PORTS = [
     { label: "PostgreSQL", port: 5432 },
@@ -67,9 +68,9 @@ export async function checkDatabaseCredentials(
             await checkPostgres(creds);
             return;
 
-        //case DatabaseName.MYSQL: //TODO add mysql und mariadb check
-        //case DatabaseName.MARIADB:
-            //return checkMysql(creds);
-            //return;
+        case DatabaseName.MYSQL:
+        case DatabaseName.MARIADB:
+            await checkMysql(creds);
+            return;
     }
 }
