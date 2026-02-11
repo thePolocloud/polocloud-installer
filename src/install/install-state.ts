@@ -1,5 +1,5 @@
 import z from "zod/v4";
-import { DatabaseName, DatabaseSource, DatabaseType, Module } from "./install-enums.js";
+import { DatabaseName, DatabaseSource, DatabaseType, Module, RedisSource } from "./install-enums.js";
 
 export const InstallStateSchema = z.object({
   acceptedTerms: z.boolean(),
@@ -26,6 +26,22 @@ export const InstallStateSchema = z.object({
       database: z.string().max(255),
     }).optional()
 
+  }).optional(),
+
+  redis: z.object({
+    enabled: z.boolean(),
+    source: z.enum(RedisSource).optional(),
+
+    detected: z.object({
+      host: z.string(),
+      port: z.number(),
+    }).optional(),
+
+    credentials: z.object({
+      host: z.string().max(255),
+      port: z.number().min(1).max(65535),
+      password: z.string().max(255),
+    }).optional(),
   }).optional(),
 
   autoStart: z.boolean(),
@@ -65,7 +81,13 @@ export const zodValidate =
     };
 
 export type InstallState = z.infer<typeof InstallStateSchema>;
+
 export type DatabaseState =
-    NonNullable<z.infer<typeof InstallStateSchema>["database"]>;
+  NonNullable<z.infer<typeof InstallStateSchema>["database"]>;
 export type DatabaseCredentials =
-    NonNullable<DatabaseState["credentials"]>;
+  NonNullable<DatabaseState["credentials"]>;
+
+export type RedisState =
+  NonNullable<z.infer<typeof InstallStateSchema>["redis"]>;
+export type RedisCredentials =
+  NonNullable<RedisState["credentials"]>;

@@ -11,11 +11,16 @@ export enum DatabaseType {
 
 export enum DatabaseSource {
   AUTO,
-  MANUAL
+  MANUAL,
+}
+
+export enum RedisSource {
+  AUTO,
+  MANUAL,
 }
 
 export enum DatabaseName {
-  POSTGRESQL,
-  MYSQL,
-  MARIADB,
+  POSTGRESQL = "POSTGRESQL",
+  MYSQL = "MYSQL",
+  MARIADB = "MARIADB",
 }

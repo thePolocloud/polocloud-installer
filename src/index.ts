@@ -3,13 +3,14 @@
 import * as p from "@clack/prompts";
 import color from "picocolors";
 import { JavaCaller } from "java-caller";
-import { DatabaseName, DatabaseSource, DatabaseType, Module } from "./install/install-enums.js";
+import { DatabaseName, DatabaseSource, DatabaseType, Module, RedisSource } from "./install/install-enums.js";
 import { createInstallState } from "./install/install-state.factory.js";
 import { DatabaseNameSchema, HostSchema, PasswordSchema, PortSchema, UsernameSchema, zodValidate } from "./install/install-state.js";
 import { writeInstallerConfig } from "./install/installer-config.js";
 import { writeEnv } from "./install/env-writer.js";
 import { downloadLauncherJar } from "./install/github/github-download.js";
 import { checkDatabaseCredentials, detectLocalDatabase } from "./install/database/database-check.js";
+import { checkRedis, detectRedis } from "./install/redis/redis-check.js";
 
 const state = createInstallState();
 
@@ -267,6 +268,128 @@ async function installPoloCloud() {
         }
     }
 
+    if (state.cluster) {
+        const useRedis = await p.confirm({
+            message: "Do you want to enable Redis for caching & cluster communication?",
+            initialValue: false,
+            active: "Yes",
+            inactive: "No",
+        });
+
+        if (p.isCancel(useRedis)) {
+            p.outro(color.redBright("Installation cancelled."));
+            process.exit(0);
+        }
+
+        if (useRedis) {
+            const spinner = p.spinner();
+            spinner.start("Checking for running Redis instance...");
+
+            const redisDetected = await detectRedis();
+
+            if (redisDetected) {
+                spinner.stop("Found a running Redis instance");
+
+                p.log.info(
+                    color.whiteBright(
+                        [
+                            `A service is running on port 6379.`,
+                            `This port is commonly used by Redis.`,
+                            `If this service is not a Redis instance,`,
+                            `or you don't want to use it, select “No”.`
+                        ].join("\n")
+                    )
+                );
+
+                const useDetectedRedis = await p.confirm({
+                    message: "Do you want to use this Redis instance?",
+                    initialValue: true,
+                    active: "Yes, use this Redis",
+                    inactive: "No, configure manually",
+                });
+
+                if (p.isCancel(useDetectedRedis)) {
+                    p.outro(color.redBright("Installation cancelled."));
+                    process.exit(0);
+                }
+
+                if (useDetectedRedis) {
+                    state.redis = {
+                        enabled: true,
+                        source: RedisSource.AUTO,
+                        detected: {
+                            host: "127.0.0.1",
+                            port: 6379,
+                        }
+                    };
+                } else {
+                    state.redis = {
+                        enabled: true,
+                        source: RedisSource.MANUAL,
+                    };
+                }
+
+            } else {
+                spinner.stop("No running Redis instance found");
+
+                state.redis = {
+                    enabled: true,
+                    source: RedisSource.MANUAL,
+                };
+            }
+
+
+            const askHostPort = state.redis.source !== RedisSource.AUTO;
+
+            const creds = await p.group({
+                ...(askHostPort && {
+                    host: () =>
+                        p.text({
+                            message: "Redis host",
+                            initialValue: "127.0.0.1",
+                            validate: zodValidate(HostSchema),
+                        }),
+                    port: () =>
+                        p.text({
+                            message: "Redis port",
+                            initialValue: "6379",
+                            validate: zodValidate(PortSchema),
+                        }),
+                }),
+                password: () =>
+                    p.password({
+                        message: "Redis password",
+                        validate: zodValidate(PasswordSchema)
+                    }),
+            });
+
+            if (
+                p.isCancel(creds) ||
+                p.isCancel(creds.password) ||
+                (askHostPort &&
+                    (p.isCancel(creds.host) ||
+                        p.isCancel(creds.port)))
+            ) {
+                p.outro(color.redBright("Installation cancelled."));
+                process.exit(0);
+            }
+
+            const host =
+                creds.host ?? state.redis.detected!.host;
+
+            const port =
+                creds.port !== undefined
+                    ? Number(creds.port)
+                    : state.redis.detected!.port;
+
+            state.redis.credentials = {
+                host: host,
+                port: port,
+                password: creds.password,
+            };
+        }
+    }
+
     /**
      * Ask the user if they want to start PoloCloud after the installation is complete.
      */
@@ -312,6 +435,17 @@ async function installPoloCloud() {
             }
         },
         {
+            title: "Validating Redis connection",
+            task: async () => {
+                if (!state.redis?.enabled) {
+                    return "Validating Redis connection (Skipped)";
+                }
+
+                await checkRedis(state.redis.credentials!);
+                return "Redis connection successful";
+            }
+        },
+        {
             title: "Downloading PoloCloud launcher",
             task: async (message) => {
                 const jarPath = await downloadLauncherJar(message);
@@ -324,13 +458,24 @@ async function installPoloCloud() {
                 writeInstallerConfig({
                     createdAt: new Date().toISOString(),
                     module: state.module,
+
                     database: state.database
                         ? {
                             enabled: true,
                             type: state.database.type,
+                            engine: state.database.name,
                             credentialsRef: ".env",
                         }
                         : { enabled: false },
+
+                    redis: state.redis?.enabled
+                        ? {
+                            enabled: true,
+                            credentialsRef: ".env",
+                        }
+                        : { enabled: false },
+
+                    cluster: state.cluster ?? false,
                 });
 
                 return "Config created";
@@ -339,11 +484,18 @@ async function installPoloCloud() {
         {
             title: "Writing environment variables",
             task: async () => {
-                if (!state.database?.credentials) {
+                const dbCreds = state.database?.credentials;
+                const redisCreds = state.redis?.credentials;
+
+                if (!dbCreds && !redisCreds) {
                     return "Writing environment variables (Skipped)";
                 }
 
-                writeEnv(state.database.credentials);
+                writeEnv({
+                    ...(dbCreds && { database: dbCreds }),
+                    ...(redisCreds && { redis: redisCreds }),
+                });
+
                 return "Environment variables created";
             },
         },
