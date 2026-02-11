@@ -1,10 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { INSTALLER_DIR, ENV_FILENAME } from "../core/constants.js";
 
-const INSTALLER_DIR = ".installer";
-const ENV_FILE = path.join(INSTALLER_DIR, ".env");
-
-export function writeEnv(options: {
+interface EnvOptions {
     database?: {
         host: string;
         port: number;
@@ -17,9 +15,14 @@ export function writeEnv(options: {
         port: number;
         password?: string;
     };
-}) {
-    if (!fs.existsSync(INSTALLER_DIR)) {
-        fs.mkdirSync(INSTALLER_DIR, { recursive: true });
+}
+
+export function writeEnvFile(options: EnvOptions) {
+    const dir = path.resolve(INSTALLER_DIR);
+    const file = path.join(dir, ENV_FILENAME);
+
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
     }
 
     const lines: string[] = [];
@@ -38,9 +41,11 @@ export function writeEnv(options: {
         lines.push(
             `POLOCLOUD_REDIS_HOST=${options.redis.host}`,
             `POLOCLOUD_REDIS_PORT=${options.redis.port}`,
-            `POLOCLOUD_REDIS_PASSWORD=${options.redis.password}`,
+            `POLOCLOUD_REDIS_PASSWORD=${options.redis.password ?? ""}`,
         );
     }
 
-    fs.writeFileSync(ENV_FILE, lines.join("\n"), "utf8");
+    if (lines.length === 0) return;
+
+    fs.writeFileSync(file, lines.join("\n"), "utf-8");
 }

@@ -1,8 +1,8 @@
 import * as p from "@clack/prompts";
 import color from "picocolors";
-import type { InstallState } from "../install-state.js";
 import { detectRedisInstance } from "./redis/detect-redis-instance.step.js";
 import { askRedisCredentials } from "./redis/ask-redis-credentials.step.js";
+import type { InstallState } from "../core/state.types.js";
 
 export async function runRedisStep(state: InstallState) {
     if (!state.cluster) return;

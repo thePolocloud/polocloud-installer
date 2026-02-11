@@ -1,8 +1,8 @@
 import { Socket } from "node:net";
 import type { DetectedDatabase } from "./database.types.js";
-import { DatabaseName } from "../install-enums.js";
 import { checkPostgres } from "./postgres.js";
 import { checkMysql } from "./mysql.js";
+import { DatabaseName } from "../core/enum.js";
 
 const COMMON_DB_PORTS = [
     { label: "PostgreSQL", port: 5432 },

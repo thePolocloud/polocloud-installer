@@ -1,9 +1,8 @@
 import * as p from "@clack/prompts";
 import color from "picocolors";
 import { detectRedis } from "../../redis/redis-check.js";
-import { RedisSource } from "../../install-enums.js";
-
-import type { InstallState } from "../../install-state.js";
+import type { InstallState } from "../../core/state.types.js";
+import { RedisSource } from "../../core/enum.js";
 
 export async function detectRedisInstance(state: InstallState) {
     const spinner = p.spinner();

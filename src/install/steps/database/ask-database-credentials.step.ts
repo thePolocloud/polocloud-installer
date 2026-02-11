@@ -1,8 +1,8 @@
 import * as p from "@clack/prompts";
 import color from "picocolors";
-import { DatabaseSource, DatabaseType } from "../../install-enums.js";
-
-import { DatabaseNameSchema, HostSchema, PasswordSchema, PortSchema, UsernameSchema, zodValidate, type InstallState } from "../../install-state.js";
+import { DatabaseSource, DatabaseType } from "../../core/enum.js";
+import type { InstallState } from "../../core/state.types.js";
+import { DatabaseNameSchema, HostSchema, PasswordSchema, PortSchema, UsernameSchema, zodValidate } from "../../core/prompt.validation.js";
 
 export async function askDatabaseCredentials(state: InstallState) {
     if (state.database?.type !== DatabaseType.SQL) return;

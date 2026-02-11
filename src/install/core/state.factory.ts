@@ -1,4 +1,4 @@
-import type { InstallState } from "./install-state.js";
+import type { InstallState } from "./state.types.js";
 
 export function createInstallState(): InstallState {
   return {

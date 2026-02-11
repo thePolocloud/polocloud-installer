@@ -1,7 +1,7 @@
 import pg from "pg";
 import * as p from "@clack/prompts";
 import color from "picocolors";
-import type { DatabaseCredentials } from "../install-state.js";
+import type { DatabaseCredentials } from "../core/state.types.js";
 
 const { Client } = pg;
 

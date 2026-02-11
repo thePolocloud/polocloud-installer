@@ -1,6 +1,6 @@
+import type { InstallState } from "../core/state.types.js";
 import { checkDatabaseCredentials } from "../database/database-check.js";
 import { checkRedis } from "../redis/redis-check.js";
-import type { InstallState } from "../install-state.js";
 
 export function createValidationTasks(state: InstallState) {
     return [

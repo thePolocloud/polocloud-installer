@@ -1,11 +1,11 @@
-import { writeInstallerConfig } from "../installer-config.js";
-import type { InstallState } from "../install-state.js";
+import type { InstallState } from "../core/state.types.js";
+import { writeConfigFile } from "../storage/config-writer.js";
 
 export function createConfigTask(state: InstallState) {
     return {
         title: "Creating Configuration",
         task: async () => {
-            writeInstallerConfig({
+            writeConfigFile({
                 createdAt: new Date().toISOString(),
                 module: state.module,
 

@@ -1,7 +1,7 @@
 import * as p from "@clack/prompts";
 import color from "picocolors";
-import { Module } from "../install-enums.js";
-import type { InstallState } from "../install-state.js";
+import type { InstallState } from "../core/state.types.js";
+import { Module } from "../core/enum.js";
 
 export async function runModuleStep(state: InstallState) {
     const selectedModule = await p.select({

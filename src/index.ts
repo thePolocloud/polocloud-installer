@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { createInstallState } from "./install/install-state.factory.js";
 import { runTermsStep } from "./install/steps/terms.step.js";
 import { runModuleStep } from "./install/steps/module.step.js";
 import { runClusterStep } from "./install/steps/cluster.step.js";
@@ -10,12 +9,13 @@ import { runAutostartStep } from "./install/steps/autostart.step.js";
 import { runInstallationTasks } from "./install/tasks/installation.task.js";
 import { runAutostartExecution } from "./install/runtime/autostart.runtime.js";
 import { showOutro } from "./install/runtime/outro.runtime.js";
+import { createInstallState } from "./install/core/state.factory.js";
 
 const state = createInstallState();
 
-await installPoloCloud();
+await runInstaller();
 
-async function installPoloCloud() {
+async function runInstaller() {
     console.clear();
 
     await runTermsStep(state);

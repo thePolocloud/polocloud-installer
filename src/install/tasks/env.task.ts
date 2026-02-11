@@ -1,5 +1,6 @@
-import { writeEnv } from "../env-writer.js";
-import type { InstallState } from "../install-state.js";
+import type { InstallState } from "../core/state.types.js";
+import { writeEnvFile } from "../storage/env-writer.js";
+
 
 export function createEnvTask(state: InstallState) {
     return {
@@ -12,7 +13,7 @@ export function createEnvTask(state: InstallState) {
                 return "Writing environment variables (Skipped)";
             }
 
-            writeEnv({
+            writeEnvFile({
                 ...(dbCreds && { database: dbCreds }),
                 ...(redisCreds && { redis: redisCreds }),
             });

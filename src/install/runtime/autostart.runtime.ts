@@ -1,7 +1,7 @@
 import * as p from "@clack/prompts";
 import color from "picocolors";
 import { JavaCaller } from "java-caller";
-import type { InstallState } from "../install-state.js";
+import type { InstallState } from "../core/state.types.js";
 
 export async function runAutostartExecution(state: InstallState) {
     if (!state.autoStart) {

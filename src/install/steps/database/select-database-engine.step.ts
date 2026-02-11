@@ -1,8 +1,6 @@
 import * as p from "@clack/prompts";
-import color from "picocolors";
-import { DatabaseName } from "../../install-enums.js";
-
-import type { InstallState } from "../../install-state.js";
+import color from "picocolors";import type { InstallState } from "../../core/state.types.js";
+import { DatabaseName } from "../../core/enum.js";
 
 export async function selectDatabaseEngine(state: InstallState) {
     if (!state.database?.exists) return;

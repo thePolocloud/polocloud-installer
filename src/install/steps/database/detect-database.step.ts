@@ -1,9 +1,8 @@
 import * as p from "@clack/prompts";
 import color from "picocolors";
 import { detectLocalDatabase } from "../../database/database-check.js";
-import { DatabaseSource, DatabaseType } from "../../install-enums.js";
-
-import type { InstallState } from "../../install-state.js";
+import type { InstallState } from "../../core/state.types.js";
+import { DatabaseSource, DatabaseType } from "../../core/enum.js";
 
 export async function detectDatabase(state: InstallState) {
     const spinner = p.spinner();
@@ -44,7 +43,7 @@ export async function detectDatabase(state: InstallState) {
     if (useDetectedDb) {
         state.database = {
             exists: true,
-            type: DatabaseType.SQL,
+            type: DatabaseType.SQL, //TODO we cant say here if its sql or not when whe want to support NOSQL
             source: DatabaseSource.AUTO,
             detected: {
                 host: "127.0.0.1",

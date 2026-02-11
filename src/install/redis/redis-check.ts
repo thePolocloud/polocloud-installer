@@ -2,7 +2,7 @@ import { Socket } from "node:net";
 import { createClient } from "redis";
 import * as p from "@clack/prompts";
 import color from "picocolors";
-import type { RedisCredentials } from "../install-state.js";
+import type { RedisCredentials } from "../core/state.types.js";
 
 const COMMON_REDIS_PORT = 6379;
 

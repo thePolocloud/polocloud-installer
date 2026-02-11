@@ -1,6 +1,6 @@
 import * as p from "@clack/prompts";
 import color from "picocolors";
-import type { InstallState } from "../install-state.js";
+import type { InstallState } from "../core/state.types.js";
 
 export async function runTermsStep(state: InstallState) {
     p.log.info(

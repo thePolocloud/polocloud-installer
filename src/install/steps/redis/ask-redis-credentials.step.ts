@@ -1,8 +1,9 @@
 import * as p from "@clack/prompts";
 import color from "picocolors";
-import { RedisSource } from "../../install-enums.js";
+import type { InstallState } from "../../core/state.types.js";
+import { RedisSource } from "../../core/enum.js";
+import { HostSchema, PasswordSchema, PortSchema, zodValidate } from "../../core/prompt.validation.js";
 
-import { HostSchema, PasswordSchema, PortSchema, zodValidate, type InstallState } from "../../install-state.js";
 
 export async function askRedisCredentials(state: InstallState) {
     if (!state.redis?.enabled) return;
