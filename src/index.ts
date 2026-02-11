@@ -278,19 +278,21 @@ async function installPoloCloud() {
         ].join('\n')
     );
 
-    const autoStart = await p.confirm({
-        message: "Do you want to start PoloCloud after the installation is complete?",
-        initialValue: true,
-        active: "Yes",
-        inactive: "No"
-    });
+    if (state.module === Module.NODE) {
+        const autoStart = await p.confirm({
+            message: "Do you want to start PoloCloud after the installation is complete?",
+            initialValue: true,
+            active: "Yes",
+            inactive: "No"
+        });
 
-    if (p.isCancel(autoStart)) {
-        p.outro(color.redBright("Installation cancelled."));
-        process.exit(0);
+        if (p.isCancel(autoStart)) {
+            p.outro(color.redBright("Installation cancelled."));
+            process.exit(0);
+        }
+
+        state.autoStart = autoStart;
     }
-
-    state.autoStart = autoStart;
 
     p.log.info(color.whiteBright("Start with Installing..."));
     await p.tasks([
@@ -298,7 +300,7 @@ async function installPoloCloud() {
             title: "Validating database credentials",
             task: async () => {
                 if (!state.cluster) {
-                    return "Skipped";
+                    return "Validating database credentials (Skipped)";
                 }
 
                 await checkDatabaseCredentials(
@@ -338,7 +340,7 @@ async function installPoloCloud() {
             title: "Writing environment variables",
             task: async () => {
                 if (!state.database?.credentials) {
-                    return "Skipped";
+                    return "Writing environment variables (Skipped)";
                 }
 
                 writeEnv(state.database.credentials);
@@ -371,7 +373,7 @@ async function installPoloCloud() {
         spinner.start("Starting PoloCloud...");
 
         const java = new JavaCaller({
-            jar: "polocloud-launcher.jar", //TODO maybe only start if module === node because cli would not be shown here
+            jar: "polocloud-launcher.jar",
             minimumJavaVersion: 21,
             javaType: "jdk"
         });

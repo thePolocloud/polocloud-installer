@@ -28,7 +28,7 @@ export const InstallStateSchema = z.object({
 
   }).optional(),
 
-  autoStart: z.boolean().optional(),
+  autoStart: z.boolean(),
 });
 
 export const HostSchema = z
