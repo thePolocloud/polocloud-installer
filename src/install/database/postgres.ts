@@ -1,12 +1,12 @@
 import pg from "pg";
 import * as p from "@clack/prompts";
 import color from "picocolors";
-import type { DatabaseCredentials } from "../core/state.types.js";
+import type { SqlCredentials } from "../core/state.types.js";
 
 const { Client } = pg;
 
 export async function checkPostgres(
-    creds: DatabaseCredentials
+    creds: SqlCredentials
 ): Promise<void> {
     const client = new Client({
         host: creds.host,

@@ -41,9 +41,10 @@ export async function detectDatabase(state: InstallState) {
     }
 
     if (useDetectedDb) {
+        const databaseType = detected.type === "nosql" ? DatabaseType.NOSQL : DatabaseType.SQL;
         state.database = {
             exists: true,
-            type: DatabaseType.SQL, //TODO we cant say here if its sql or not when whe want to support NOSQL
+            type: databaseType,
             source: DatabaseSource.AUTO,
             detected: {
                 host: "127.0.0.1",

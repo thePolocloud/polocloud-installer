@@ -23,4 +23,5 @@ export enum DatabaseName {
   POSTGRESQL = "postgresql",
   MYSQL = "mysql",
   MARIADB = "mariadb",
+  MONGODB = "mongodb",
 }

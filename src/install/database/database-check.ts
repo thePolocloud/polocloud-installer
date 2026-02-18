@@ -2,12 +2,14 @@ import { Socket } from "node:net";
 import type { DetectedDatabase } from "./database.types.js";
 import { checkPostgres } from "./postgres.js";
 import { checkMysql } from "./mysql.js";
+import { checkMongodb } from "./mongodb.js";
 import { DatabaseName } from "../core/enum.js";
+import type { DatabaseCredentials } from "../core/state.types.js";
 
 const COMMON_DB_PORTS = [
-    { label: "PostgreSQL", port: 5432 },
-    { label: "MySQL or MariaDB", port: 3306 },
-    // { label: "MongoDB", port: 27017 }, currently we only support sql databases
+    { label: "PostgreSQL", port: 5432, type: "sql" },
+    { label: "MySQL or MariaDB", port: 3306, type: "sql" },
+    { label: "MongoDB", port: 27017, type: "nosql" },
 ];
 
 function checkPortOpen(
@@ -46,6 +48,7 @@ export async function detectLocalDatabase(): Promise<DetectedDatabase> {
                 exists: true,
                 label: db.label,
                 port: db.port,
+                type: db.type as "sql" | "nosql",
             };
         }
     }
@@ -55,22 +58,20 @@ export async function detectLocalDatabase(): Promise<DetectedDatabase> {
 
 export async function checkDatabaseCredentials(
     name: DatabaseName,
-    creds: {
-        host: string;
-        port: number;
-        username: string;
-        password: string;
-        database: string;
-    }
+    creds: DatabaseCredentials
 ): Promise<void> {
     switch (name) {
         case DatabaseName.POSTGRESQL:
-            await checkPostgres(creds);
+            await checkPostgres(creds as any);
             return;
 
         case DatabaseName.MYSQL:
         case DatabaseName.MARIADB:
-            await checkMysql(creds);
+            await checkMysql(creds as any);
+            return;
+
+        case DatabaseName.MONGODB:
+            await checkMongodb(creds as any);
             return;
     }
 }

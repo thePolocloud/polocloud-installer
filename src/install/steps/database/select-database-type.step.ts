@@ -11,12 +11,11 @@ export async function selectDatabaseType(state: InstallState) {
         options: [
             {
                 value: DatabaseType.SQL,
-                label: "SQL (recommended)",
+                label: "SQL (PostgreSQL, MySQL, MariaDB)",
             },
             {
                 value: DatabaseType.NOSQL,
-                label: color.dim("NoSQL (coming soon)"),
-                disabled: true,
+                label: "NoSQL (MongoDB)",
             },
         ],
     });

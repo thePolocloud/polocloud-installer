@@ -1,6 +1,21 @@
 import z from "zod";
 import { DatabaseName, DatabaseSource, DatabaseType, Module, RedisSource } from "./enum.js";
 
+const SqlCredentialsSchema = z.object({
+  host: z.string().max(255),
+  port: z.number().min(1).max(65535),
+  username: z.string().max(255),
+  password: z.string().max(255),
+  database: z.string().max(255),
+});
+
+const MongodbCredentialsSchema = z.object({
+  host: z.string().max(255),
+  port: z.number().min(1).max(65535),
+  username: z.string().max(255),
+  password: z.string().max(255),
+});
+
 export const InstallStateSchema = z.object({
   acceptedTerms: z.boolean(),
   module: z.enum(Module).optional(),
@@ -18,13 +33,10 @@ export const InstallStateSchema = z.object({
       label: z.string(),
     }).optional(),
 
-    credentials: z.object({
-      host: z.string().max(255),
-      port: z.number().min(1).max(65535),
-      username: z.string().max(255),
-      password: z.string().max(255),
-      database: z.string().max(255),
-    }).optional(),
+    credentials: z.union([
+      SqlCredentialsSchema,
+      MongodbCredentialsSchema,
+    ]).optional(),
   }).optional(),
 
   redis: z.object({
