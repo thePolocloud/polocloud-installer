@@ -1,14 +1,12 @@
-import fs from "node:fs";
+import fs from "fs-extra";
 import path from "node:path";
 import { INSTALLER_DIR, CONFIG_FILENAME } from "../core/constants.js";
+import { ensureHiddenDir } from "./filesystem.js";
 
-export function writeConfigFile(config: unknown) {
+export async function writeConfigFile(config: unknown): Promise<void> {
   const dir = path.resolve(INSTALLER_DIR);
   const file = path.join(dir, CONFIG_FILENAME);
 
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-
-  fs.writeFileSync(file, JSON.stringify(config, null, 2), "utf-8");
+  await ensureHiddenDir(dir);
+  await fs.writeJson(file, config, { spaces: 2 });
 }
