@@ -18,6 +18,7 @@ const MongodbCredentialsSchema = z.object({
 
 export const InstallStateSchema = z.object({
   acceptedTerms: z.boolean(),
+  language: z.string(),
   module: z.enum(Module).optional(),
   cluster: z.boolean().optional(),
 

@@ -7,6 +7,7 @@ export function createConfigTask(state: InstallState) {
         task: async () => {
             writeConfigFile({
                 createdAt: new Date().toISOString(),
+                language: state.language,
                 module: state.module,
 
                 database: state.database
