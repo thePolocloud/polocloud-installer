@@ -23,7 +23,7 @@
     "polocloud-installer": "./dist/index.js"
   },
   "dependencies": {
-    "@clack/prompts": "^1.0.0",
+    "@clack/prompts": "^1.1.0",
     "fs-extra": "^11.3.4",
     "java-caller": "^4.4.1",
     "mongodb": "^7.1.0",
