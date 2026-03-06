@@ -15,7 +15,7 @@
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.3.5",
-    "@types/pg": "^8.16.0",
+    "@types/pg": "^8.18.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
@@ -28,7 +28,7 @@
     "java-caller": "^4.3.3",
     "mongodb": "^7.1.0",
     "mysql2": "^3.17.0",
-    "pg": "^8.18.0",
+    "pg": "^8.20.0",
     "picocolors": "^1.1.1",
     "redis": "^5.10.0",
     "zod": "^4.3.6"
