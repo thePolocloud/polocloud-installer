@@ -14,7 +14,7 @@
   "packageManager": "pnpm@10.30.0",
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^25.3.5",
+    "@types/node": "^25.4.0",
     "@types/pg": "^8.18.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
